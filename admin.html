@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDFC Champions League - Flexible Admin Panel</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Rajdhani:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase Compat SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --gold: #FFD700;
+            --blue: #00F0FF;
+            --red: #ff3838;
+            --win: #00E676;
+            --dark: #07070a;
+            --sidebar: #0d0e14;
+            --card: rgba(20, 21, 29, 0.95);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0; background: var(--dark); color: #fff;
+            font-family: 'Rajdhani', sans-serif; height: 100vh;
+            display: flex; overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 270px; background: var(--sidebar); border-right: 1px solid var(--border);
+            padding: 20px; display: flex; flex-direction: column; flex-shrink: 0;
+            z-index: 100;
+        }
+        .brand {
+            font-family: 'Teko'; font-size: 2.2rem; color: #fff; text-align: center;
+            margin-bottom: 25px; line-height: 1.1;
+        }
+        .brand span { color: var(--gold); }
+        .league-subtitle { font-size: 0.75rem; color: var(--blue); letter-spacing: 2px; text-transform: uppercase; }
+
+        .nav-btn {
+            background: transparent; color: #999; border: none; padding: 12px 16px;
+            font-size: 1.1rem; font-family: 'Rajdhani'; font-weight: 700;
+            cursor: pointer; border-radius: 8px; display: flex; gap: 14px; align-items: center;
+            transition: 0.2s; margin-bottom: 6px; width: 100%; text-align: left;
+        }
+        .nav-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { color: #000; background: var(--gold); box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+
+        /* MAIN CONTENT */
+        .main { flex: 1; padding: 30px; overflow-y: auto; position: relative; }
+        .page { display: none; max-width: 1200px; margin: 0 auto; animation: fadeIn 0.25s ease; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 {
+            font-family: 'Teko'; font-size: 2.4rem; color: var(--blue); margin: 0 0 20px 0;
+            border-bottom: 1px solid var(--border); padding-bottom: 8px; text-transform: uppercase;
+        }
+
+        .card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+            padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        input, select {
+            background: #000; border: 1px solid #333; color: white; padding: 10px 14px;
+            border-radius: 8px; font-family: 'Rajdhani'; font-size: 1rem; width: 100%;
+        }
+        input:focus, select:focus { border-color: var(--blue); }
+
+        .btn {
+            padding: 12px 20px; border-radius: 8px; border: none; font-weight: 700;
+            cursor: pointer; font-family: 'Teko'; font-size: 1.25rem; letter-spacing: 1px;
+            text-transform: uppercase; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-blue { background: var(--blue); color: #000; }
+        .btn-gold { background: var(--gold); color: #000; }
+        .btn-red { background: var(--red); color: #fff; }
+        .btn-green { background: var(--win); color: #000; }
+        .btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+        /* PLAYERS GRID */
+        .players-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+        .p-edit-card {
+            background: rgba(0,0,0,0.5); border: 1px solid #282835; border-radius: 10px;
+            padding: 15px; display: flex; gap: 12px; align-items: center; position: relative;
+        }
+        .p-edit-card img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gold); }
+        .btn-del-p {
+            position: absolute; top: 10px; right: 10px; background: none; border: none;
+            color: #666; cursor: pointer; font-size: 1rem; transition: 0.2s;
+        }
+        .btn-del-p:hover { color: var(--red); transform: scale(1.1); }
+
+        /* MATCH MANAGER UI */
+        .filter-header {
+            display: flex; gap: 15px; flex-wrap: wrap; background: rgba(0,0,0,0.4);
+            padding: 15px; border-radius: 10px; margin-bottom: 20px; align-items: center;
+        }
+        .match-row {
+            background: #0e0f16; border: 1px solid #252535; border-radius: 12px;
+            padding: 15px; margin-bottom: 12px; display: flex; flex-wrap: wrap;
+            align-items: center; gap: 15px; border-left: 4px solid #444;
+        }
+        .match-row.done { border-left-color: var(--win); }
+
+        /* BRACKET ADMIN */
+        .b-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 15px; }
+
+        /* TOAST & FLOATING SAVE */
+        #toast {
+            position: fixed; top: -60px; left: 50%; transform: translateX(-50%);
+            background: var(--win); color: black; padding: 12px 30px; border-radius: 50px;
+            font-weight: 800; font-family: 'Rajdhani'; font-size: 1.1rem; z-index: 10000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6); transition: 0.4s ease;
+        }
+        .fab-save {
+            position: fixed; bottom: 30px; right: 30px; background: var(--gold);
+            color: #000; width: 65px; height: 65px; border-radius: 50%; border: none;
+            box-shadow: 0 10px 25px rgba(255, 215, 0, 0.4); font-size: 1.8rem;
+            cursor: pointer; z-index: 999; display: flex; align-items: center; justify-content: center;
+        }
+
+        #login-overlay {
+            position: fixed; inset: 0; background: #07070a; z-index: 99999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+
+        @media (max-width: 900px) {
+            body { flex-direction: column; }
+            .sidebar {
+                width: 100%; height: 65px; flex-direction: row; order: 2;
+                padding: 0 10px; border-right: none; border-top: 1px solid var(--border);
+                justify-content: space-around; align-items: center;
+            }
+            .brand { display: none; }
+            .nav-btn { padding: 8px; font-size: 0.8rem; margin: 0; flex-direction: column; gap: 3px; width: auto; }
+            .main { order: 1; height: calc(100vh - 65px); padding: 15px; }
+            .fab-save { bottom: 80px; right: 20px; width: 55px; height: 55px; font-size: 1.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="toast">Saved to Cloud!</div>
+
+<!-- LOGIN OVERLAY -->
+<div id="login-overlay">
+    <div style="font-size:4rem; margin-bottom:10px;">👑</div>
+    <h1 style="font-family:'Teko'; font-size:3.5rem; color:var(--blue); margin:0;">KDFC ADMIN PORTAL</h1>
+    <p style="color:#888; margin-bottom:25px;">KDFC Champions League Management</p>
+    <button onclick="login()" class="btn btn-gold" style="padding:14px 40px; font-size:1.4rem;">
+        <i class="fa-brands fa-google"></i> Login with Google
+    </button>
+    <p id="auth-err" style="color:var(--red); margin-top:15px; font-weight:700;"></p>
+</div>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="brand">
+        KDFC <span>LEAGUE</span>
+        <div class="league-subtitle">Champions 2026</div>
+    </div>
+    <button class="nav-btn active" onclick="go('setup')"><i class="fa fa-sliders"></i> <span>Setup</span></button>
+    <button class="nav-btn" onclick="go('players')"><i class="fa fa-users"></i> <span>Players (<span id="nav-count">26</span>)</span></button>
+    <button class="nav-btn" onclick="go('fixtures')"><i class="fa fa-calendar-alt"></i> <span>Matches</span></button>
+    <button class="nav-btn" onclick="go('bracket')"><i class="fa fa-trophy"></i> <span>Playoffs</span></button>
+    <button class="nav-btn" onclick="logout()" style="color:var(--red); margin-top:auto;"><i class="fa fa-power-off"></i> <span>Logout</span></button>
+</div>
+
+<!-- MAIN VIEW -->
+<div class="main">
+
+    <!-- 1. SETUP PAGE -->
+    <div id="setup" class="page active">
+        <h2>Tournament Setup & Tools</h2>
+        
+        <div class="card" style="max-width:650px;">
+            <h3 style="margin-top:0; color:var(--gold); font-family:'Teko'; font-size:1.8rem;">Initialize League Size (20 - 30 Players)</h3>
+            <p style="color:#aaa; font-size:0.95rem;">
+                Select between <strong>20 to 30 players</strong> for this tournament. Clicking initialize creates the player roster and resets prior match results.
+            </p>
+            <div style="display:flex; align-items:center; gap:15px; margin-bottom:15px;">
+                <label style="color:#ccc; font-weight:700;">Number of Players:</label>
+                <input type="number" id="num-players" min="20" max="30" value="26" style="width:100px; text-align:center; font-size:1.2rem; font-weight:bold;">
+                <span style="color:#888; font-size:0.85rem;">(Min: 20, Max: 30)</span>
+            </div>
+            <button onclick="initFlexibleLeague()" class="btn btn-red">
+                <i class="fa fa-rotate"></i> Initialize League Roster
+            </button>
+        </div>
+
+        <div class="card" style="max-width:650px;">
+            <h3 style="margin-top:0; color:var(--blue); font-family:'Teko'; font-size:1.8rem;">Auto-Generate Fixtures (5 Matches/Day)</h3>
+            <p style="color:#aaa; font-size:0.95rem;">
+                Generates a complete round-robin tournament for the active roster (<span id="setup-current-p-count" style="color:var(--gold); font-weight:bold;">26</span> players). 
+                Matches are grouped into <strong>5 matches per day</strong>, strictly guaranteeing that <strong>no player plays more than 1 match on the same day</strong>.
+            </p>
+            <div style="margin-bottom:15px;">
+                <label style="color:#ccc; display:block; margin-bottom:6px;">Season Start Date:</label>
+                <input type="date" id="start-date" style="max-width:260px;">
+            </div>
+            <button onclick="generateSchedule()" class="btn btn-blue">
+                <i class="fa fa-magic"></i> Auto-Generate Fixtures (5 / Day)
+            </button>
+        </div>
+
+        <div class="card" style="max-width:650px;">
+            <h3 style="margin-top:0; color:var(--win); font-family:'Teko'; font-size:1.8rem;">Recalculate Table Rankings</h3>
+            <p style="color:#aaa; font-size:0.95rem;">
+                Computes W/D/L, Goals For, Goals Against, Goal Difference, and Points from all completed matches.
+            </p>
+            <button onclick="calcStandings()" class="btn btn-green">
+                <i class="fa fa-calculator"></i> Recompute Standings Now
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. EDIT PLAYERS PAGE -->
+    <div id="players" class="page">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="margin:0; border:none; padding:0;">Edit League Players (<span id="header-p-count">26</span> Total)</h2>
+            <button onclick="addNewPlayer()" class="btn btn-gold" style="font-size:1rem; padding:8px 16px;">
+                <i class="fa fa-plus"></i> Add Player
+            </button>
+        </div>
+        <div id="p-list" class="players-grid"></div>
+    </div>
+
+    <!-- 3. FIXTURES & RESCHEDULING PAGE -->
+    <div id="fixtures" class="page">
+        <h2>Schedule & Results Manager</h2>
+        
+        <div class="filter-header">
+            <div style="flex:1; min-width:200px;">
+                <label style="font-size:0.8rem; color:#888;">FILTER BY DAY:</label>
+                <select id="admin-day-filter" onchange="renderMatchesUI()">
+                    <option value="ALL">Show All Days</option>
+                </select>
+            </div>
+            <div style="flex:1; min-width:200px;">
+                <label style="font-size:0.8rem; color:#888;">SEARCH PLAYER:</label>
+                <input type="text" id="admin-p-search" placeholder="Type player name..." oninput="renderMatchesUI()">
+            </div>
+            <button onclick="calcStandings()" class="btn btn-gold" style="align-self:flex-end;">
+                <i class="fa fa-sync"></i> Update Standings
+            </button>
+        </div>
+
+        <div id="matches-ui-list"></div>
+    </div>
+
+    <!-- 4. PLAYOFFS / BRACKET PAGE -->
+    <div id="bracket" class="page">
+        <h2>Top 8 Playoff Management</h2>
+        
+        <div class="card">
+            <p style="color:#aaa; margin:0 0 15px;">
+                Takes the <strong>Top 8 ranked players</strong> from the current league standings and seeds the Quarter-Final bracket:
+                <br>• Match 1: 1st vs 8th | Match 2: 4th vs 5th | Match 3: 2nd vs 7th | Match 4: 3rd vs 6th
+            </p>
+            <button onclick="generatePlayoffs()" class="btn btn-blue">
+                <i class="fa fa-sitemap"></i> Auto-Seed Top 8 Playoffs
+            </button>
+        </div>
+
+        <div id="bracket-admin-list" class="b-grid"></div>
+    </div>
+
+</div>
+
+<button class="fab-save" onclick="saveToCloud()" title="Save changes to Firebase"><i class="fa-solid fa-floppy-disk"></i></button>
+
+<script>
+    // 1. FIREBASE SETUP
+    const ALLOWED = ["kuzurxyz@gmail.com", "riyaroy51825@gmail.com"]; 
+    const firebaseConfig = {
+  apiKey: "AIzaSyBbPfnnayATrVH5O76I3GpPtE6iUln2B4Q",
+  authDomain: "kfpt-1.firebaseapp.com",
+  databaseURL: "https://kfpt-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kfpt-1",
+  storageBucket: "kfpt-1.firebasestorage.app",
+  messagingSenderId: "73599282366",
+  appId: "1:73599282366:web:4c2ae368144a52f40d42ef",
+  measurementId: "G-G87CNPQ1MG"
+};
+
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const auth = firebase.auth();
+    const DEF_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+    let dbData = {
+        players: [],
+        matches: [],
+        bracket: []
+    };
+
+    // 2. AUTHENTICATION
+    auth.onAuthStateChanged(user => {
+        if(user && ALLOWED.includes(user.email)) {
+            document.getElementById('login-overlay').style.display = 'none';
+            loadDatabase();
+        } else if(user) {
+            document.getElementById('auth-err').innerText = "Access Denied: " + user.email;
+            auth.signOut();
+        }
+    });
+
+    function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+    function logout() { auth.signOut(); location.reload(); }
+
+    function loadDatabase() {
+        db.ref().on('value', snap => {
+            const val = snap.val();
+            if(val) {
+                dbData.players = val.players || [];
+                dbData.matches = val.matches || [];
+                dbData.bracket = val.bracket || [];
+                renderAll();
+            }
+        });
+    }
+
+    function saveToCloud() {
+        db.ref().set(dbData).then(() => showToast("Saved to Firebase Cloud!"));
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.style.top = "20px";
+        setTimeout(() => t.style.top = "-60px", 2200);
+    }
+
+    function renderAll() {
+        const count = dbData.players ? dbData.players.length : 0;
+        document.getElementById('nav-count').innerText = count;
+        document.getElementById('header-p-count').innerText = count;
+        document.getElementById('setup-current-p-count').innerText = count;
+
+        renderPlayersUI();
+        populateAdminDayFilter();
+        renderMatchesUI();
+        renderBracketAdmin();
+    }
+
+    // 3. INITIALIZE FLEXIBLE 20-30 PLAYERS
+    function initFlexibleLeague() {
+        const inputVal = parseInt(document.getElementById('num-players').value);
+        if(isNaN(inputVal) || inputVal < 20 || inputVal > 30) {
+            alert("Please choose a player count between 20 and 30!");
+            return;
+        }
+
+        if(!confirm(`Warning: Reset and initialize ${inputVal} players? Existing matches and scores will be wiped.`)) return;
+        
+        let pList = [];
+        for(let i = 1; i <= inputVal; i++) {
+            pList.push({
+                id: i,
+                name: `Player ${i}`,
+                photo: "",
+                p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
+            });
+        }
+        dbData.players = pList;
+        dbData.matches = [];
+        dbData.bracket = [];
+        saveToCloud();
+        showToast(`${inputVal} Players Initialized!`);
+    }
+
+    function addNewPlayer() {
+        if(dbData.players.length >= 30) {
+            alert("Maximum tournament capacity is 30 players!");
+            return;
+        }
+        const nextId = dbData.players.length + 1;
+        dbData.players.push({
+            id: nextId,
+            name: `Player ${nextId}`,
+            photo: "",
+            p: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, pts: 0
+        });
+        saveToCloud();
+        showToast("Added new player!");
+    }
+
+    function deletePlayer(idx) {
+        if(dbData.players.length <= 8) {
+            alert("Cannot delete below 8 players (needed for Top 8 Playoffs)!");
+            return;
+        }
+        const removed = dbData.players[idx].name;
+        if(!confirm(`Remove player ${removed}? This may affect fixtures if already generated.`)) return;
+        
+        dbData.players.splice(idx, 1);
+        saveToCloud();
+        showToast(`Removed ${removed}`);
+    }
+
+    // 4. FIXTURE GENERATOR: STRICT RULE - 1 PLAYER MAX 1 MATCH PER DAY (5 MATCHES/DAY)
+    function generateSchedule() {
+        if(!dbData.players || dbData.players.length < 8) {
+            alert("Please initialize or add at least 8 players first!");
+            return;
+        }
+        
+        const pList = dbData.players;
+        const n = pList.length;
+        const totalMatches = (n * (n - 1)) / 2;
+        const matchesPerDay = 5;
+        const totalDays = Math.ceil(totalMatches / matchesPerDay);
+
+        if(!confirm(`Generate schedule for ${n} players (${totalMatches} matches, ${totalDays} days, 5 matches/day)?\n\nRule: Strictly no player will play more than 1 match in the same day.`)) return;
+
+        let success = false;
+        let scheduledDays = null;
+
+        // Smart backtracking / urgency-ranked heuristic with instant randomized restarts
+        for (let attempt = 0; attempt < 250; attempt++) {
+            let remainingEdges = [];
+            let degree = {};
+            pList.forEach(p => { degree[p.name] = n - 1; });
+
+            for (let i = 0; i < n; i++) {
+                for (let j = i + 1; j < n; j++) {
+                    remainingEdges.push({ p1: pList[i].name, p2: pList[j].name });
+                }
+            }
+
+            // Shuffle pairs randomly for balanced pairing
+            for (let i = remainingEdges.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [remainingEdges[i], remainingEdges[j]] = [remainingEdges[j], remainingEdges[i]];
+            }
+
+            let days = [];
+            let failed = false;
+
+            for (let d = 1; d <= totalDays; d++) {
+                const matchesNeeded = (d === totalDays && totalMatches % matchesPerDay !== 0) 
+                                    ? (totalMatches % matchesPerDay) 
+                                    : matchesPerDay;
+                
+                let dayMatches = [];
+                let usedToday = new Set(); // Guarantees no player plays twice today
+
+                for (let m = 0; m < matchesNeeded; m++) {
+                    let candidates = [];
+                    for (let k = 0; k < remainingEdges.length; k++) {
+                        const e = remainingEdges[k];
+                        if (!usedToday.has(e.p1) && !usedToday.has(e.p2)) {
+                            candidates.push({ edge: e, index: k });
+                        }
+                    }
+
+                    if (candidates.length === 0) {
+                        failed = true;
+                        break;
+                    }
+
+                    // Prioritize players with the highest remaining matches (lowest slack)
+                    candidates.sort((a, b) => {
+                        const maxDegA = Math.max(degree[a.edge.p1], degree[a.edge.p2]);
+                        const maxDegB = Math.max(degree[b.edge.p1], degree[b.edge.p2]);
+                        const sumDegA = degree[a.edge.p1] + degree[a.edge.p2];
+                        const sumDegB = degree[b.edge.p1] + degree[b.edge.p2];
+
+                        if (maxDegB !== maxDegA) return maxDegB - maxDegA;
+                        if (sumDegB !== sumDegA) return sumDegB - sumDegA;
+                        return Math.random() - 0.5;
+                    });
+
+                    const chosenObj = candidates[0];
+                    const chosen = chosenObj.edge;
+
+                    dayMatches.push(chosen);
+                    usedToday.add(chosen.p1);
+                    usedToday.add(chosen.p2);
+
+                    degree[chosen.p1]--;
+                    degree[chosen.p2]--;
+
+                    remainingEdges.splice(chosenObj.index, 1);
+                }
+
+                if (failed) break;
+                days.push(dayMatches);
+            }
+
+            if (!failed && remainingEdges.length === 0) {
+                scheduledDays = days;
+                success = true;
+                break;
+            }
+        }
+
+        if (!success) {
+            alert("Could not generate conflict-free schedule in attempts. Please click generate again.");
+            return;
+        }
+
+        // Format into match fixtures with assigned dates
+        const startDateInput = document.getElementById('start-date').value;
+        let baseDate = startDateInput ? new Date(startDateInput) : new Date();
+
+        let allMatches = [];
+        let matchId = 0;
+
+        scheduledDays.forEach((dayMatches, dayIdx) => {
+            const dayNum = dayIdx + 1;
+            let mDate = new Date(baseDate);
+            mDate.setDate(baseDate.getDate() + dayIdx);
+            const dateStr = mDate.toISOString().split('T')[0];
+
+            dayMatches.forEach(m => {
+                allMatches.push({
+                    id: matchId++,
+                    day: dayNum,
+                    date: dateStr,
+                    p1: m.p1,
+                    p2: m.p2,
+                    s1: 0,
+                    s2: 0,
+                    played: false
+                });
+            });
+        });
+
+        dbData.matches = allMatches;
+        saveToCloud();
+        renderMatchesUI();
+        populateAdminDayFilter();
+        showToast(`Generated ${allMatches.length} Matches across ${totalDays} Days (Max 1 Match/Player/Day)!`);
+    }
+
+    // 5. RENDER PLAYERS EDIT
+    function renderPlayersUI() {
+        const ui = document.getElementById('p-list');
+        if(!dbData.players || dbData.players.length === 0) {
+            ui.innerHTML = `<p style="color:#888;">No players found. Please use the Setup tab to initialize.</p>`;
+            return;
+        }
+
+        ui.innerHTML = dbData.players.map((p, idx) => `
+            <div class="p-edit-card">
+                <button class="btn-del-p" onclick="deletePlayer(${idx})" title="Delete Player"><i class="fa fa-trash"></i></button>
+                <img src="${p.photo || DEF_AVATAR}" alt="${p.name}">
+                <div style="flex:1; padding-right:20px;">
+                    <div style="font-size:0.75rem; color:var(--gold); font-weight:bold;">#${idx + 1} PLAYER</div>
+                    <input type="text" value="${p.name}" onchange="updatePlayer(${idx}, 'name', this.value)" style="margin-bottom:6px;" placeholder="Player Name">
+                    <input type="text" value="${p.photo || ''}" onchange="updatePlayer(${idx}, 'photo', this.value)" placeholder="Photo URL" style="font-size:0.75rem;">
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function updatePlayer(idx, field, value) {
+        const oldName = dbData.players[idx].name;
+        dbData.players[idx][field] = value.trim();
+
+        // If player name changed, update corresponding matches
+        if(field === 'name') {
+            const newName = value.trim();
+            dbData.matches.forEach(m => {
+                if(m.p1 === oldName) m.p1 = newName;
+                if(m.p2 === oldName) m.p2 = newName;
+            });
+        }
+    }
+
+    // 6. POPULATE & RENDER MATCHES
+    function populateAdminDayFilter() {
+        const select = document.getElementById('admin-day-filter');
+        const current = select.value;
+        const days = new Set();
+        dbData.matches.forEach(m => { if(m.day) days.add(m.day); });
+
+        let html = `<option value="ALL">Show All Days</option>`;
+        Array.from(days).sort((a,b)=>a-b).forEach(d => {
+            html += `<option value="${d}">Day ${d}</option>`;
+        });
+        select.innerHTML = html;
+        select.value = current || "ALL";
+    }
+
+    function renderMatchesUI() {
+        const dayFilter = document.getElementById('admin-day-filter').value;
+        const search = document.getElementById('admin-p-search').value.toLowerCase().trim();
+        const container = document.getElementById('matches-ui-list');
+
+        let filtered = dbData.matches;
+        if(dayFilter !== 'ALL') {
+            filtered = filtered.filter(m => String(m.day) === String(dayFilter));
+        }
+        if(search) {
+            filtered = filtered.filter(m => m.p1.toLowerCase().includes(search) || m.p2.toLowerCase().includes(search));
+        }
+
+        if(filtered.length === 0) {
+            container.innerHTML = `<p style="color:#888; text-align:center; padding:30px;">No matches found.</p>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(m => {
+            const i = m.id;
+            return `
+            <div class="match-row ${m.played ? 'done' : ''}">
+                <div style="min-width:140px;">
+                    <span style="color:var(--gold); font-weight:bold; font-size:0.85rem;">MATCH #${m.id + 1} (DAY ${m.day})</span>
+                    <br>
+                    <label style="font-size:0.85rem; cursor:pointer;">
+                        <input type="checkbox" ${m.played ? 'checked' : ''} onchange="toggleMatchPlayed(${i}, this.checked)" style="width:auto; margin-right:5px;"> Finished
+                    </label>
+                </div>
+
+                <div style="flex:2; display:flex; align-items:center; gap:8px;">
+                    <span style="flex:1; text-align:right; font-weight:700;">${m.p1}</span>
+                    <input type="number" value="${m.s1}" onchange="updateMatchScore(${i}, 's1', this.value)" style="width:55px; text-align:center;">
+                    <span>-</span>
+                    <input type="number" value="${m.s2}" onchange="updateMatchScore(${i}, 's2', this.value)" style="width:55px; text-align:center;">
+                    <span style="flex:1; text-align:left; font-weight:700;">${m.p2}</span>
+                </div>
+
+                <div style="min-width:180px;">
+                    <label style="font-size:0.75rem; color:#888;">Reschedule Date:</label>
+                    <input type="text" value="${m.date || ''}" onchange="updateMatchDate(${i}, this.value)" placeholder="YYYY-MM-DD or text" style="font-size:0.85rem;">
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function toggleMatchPlayed(id, checked) {
+        dbData.matches[id].played = checked;
+    }
+    function updateMatchScore(id, field, val) {
+        dbData.matches[id][field] = parseInt(val) || 0;
+    }
+    function updateMatchDate(id, val) {
+        dbData.matches[id].date = val.trim();
+    }
+
+    // 7. STANDINGS COMPUTATION
+    function calcStandings() {
+        if(!dbData.players || dbData.players.length === 0) return;
+
+        // Reset stats
+        dbData.players.forEach(p => {
+            p.p = 0; p.w = 0; p.d = 0; p.l = 0; p.gf = 0; p.ga = 0; p.gd = 0; p.pts = 0;
+        });
+
+        // Calculate from matches
+        dbData.matches.forEach(m => {
+            if(!m.played) return;
+            const p1 = dbData.players.find(p => p.name === m.p1);
+            const p2 = dbData.players.find(p => p.name === m.p2);
+
+            if(p1 && p2) {
+                p1.p++; p2.p++;
+                p1.gf += m.s1; p1.ga += m.s2;
+                p2.gf += m.s2; p2.ga += m.s1;
+
+                if(m.s1 > m.s2) {
+                    p1.w++; p1.pts += 3;
+                    p2.l++;
+                } else if(m.s2 > m.s1) {
+                    p2.w++; p2.pts += 3;
+                    p1.l++;
+                } else {
+                    p1.d++; p1.pts += 1;
+                    p2.d++; p2.pts += 1;
+                }
+                p1.gd = p1.gf - p1.ga;
+                p2.gd = p2.gf - p2.ga;
+            }
+        });
+
+        saveToCloud();
+        showToast("Standings Updated & Synced!");
+    }
+
+    // 8. TOP 8 PLAYOFF BRACKET GENERATION
+    function generatePlayoffs() {
+        if(!confirm("Seed Top 8 Players into Quarter-Finals?")) return;
+        
+        // Sort standings
+        const sorted = [...dbData.players].sort((a,b) => {
+            return (b.pts - a.pts) || (b.gd - a.gd) || (b.gf - a.gf);
+        });
+
+        if(sorted.length < 8) {
+            alert("Need at least 8 players with valid data!");
+            return;
+        }
+
+        const top8 = sorted.slice(0, 8);
+
+        // 8 Matches: 4 QF, 2 SF, 1 Final, 1 Third Place
+        let bracket = [
+            // QF 1: Seed 1 vs Seed 8
+            { id:0, round:"QF", label:"QF 1", p1: top8[0].name, p1_img: top8[0].photo||'', s1:0, p2: top8[7].name, p2_img: top8[7].photo||'', s2:0, played:false, date:"" },
+            // QF 2: Seed 4 vs Seed 5
+            { id:1, round:"QF", label:"QF 2", p1: top8[3].name, p1_img: top8[3].photo||'', s1:0, p2: top8[4].name, p2_img: top8[4].photo||'', s2:0, played:false, date:"" },
+            // QF 3: Seed 2 vs Seed 7
+            { id:2, round:"QF", label:"QF 3", p1: top8[1].name, p1_img: top8[1].photo||'', s1:0, p2: top8[6].name, p2_img: top8[6].photo||'', s2:0, played:false, date:"" },
+            // QF 4: Seed 3 vs Seed 6
+            { id:3, round:"QF", label:"QF 4", p1: top8[2].name, p1_img: top8[2].photo||'', s1:0, p2: top8[5].name, p2_img: top8[5].photo||'', s2:0, played:false, date:"" },
+
+            // SF 1 (Winner QF1 vs Winner QF2)
+            { id:4, round:"SF", label:"Semi-Final 1", p1: "Winner QF1", p1_img:"", s1:0, p2: "Winner QF2", p2_img:"", s2:0, played:false, date:"" },
+            // SF 2 (Winner QF3 vs Winner QF4)
+            { id:5, round:"SF", label:"Semi-Final 2", p1: "Winner QF3", p1_img:"", s1:0, p2: "Winner QF4", p2_img:"", s2:0, played:false, date:"" },
+
+            // Championship Final
+            { id:6, round:"FINAL", label:"Grand Final", p1: "Winner SF1", p1_img:"", s1:0, p2: "Winner SF2", p2_img:"", s2:0, played:false, date:"" },
+            // 3rd Place Match
+            { id:7, round:"3RD", label:"3rd Place Playoff", p1: "Loser SF1", p1_img:"", s1:0, p2: "Loser SF2", p2_img:"", s2:0, played:false, date:"" }
+        ];
+
+        dbData.bracket = bracket;
+        saveToCloud();
+        renderBracketAdmin();
+        showToast("Top 8 Seeded into Quarter-Finals!");
+    }
+
+    function advanceWinner(matchIndex, winnerKey) {
+        const m = dbData.bracket[matchIndex];
+        const winnerName = m[winnerKey];
+        const winnerImg = m[winnerKey + '_img'];
+        const loserKey = (winnerKey === 'p1') ? 'p2' : 'p1';
+        const loserName = m[loserKey];
+        const loserImg = m[loserKey + '_img'];
+
+        if(matchIndex === 0) { dbData.bracket[4].p1 = winnerName; dbData.bracket[4].p1_img = winnerImg; }
+        if(matchIndex === 1) { dbData.bracket[4].p2 = winnerName; dbData.bracket[4].p2_img = winnerImg; }
+        if(matchIndex === 2) { dbData.bracket[5].p1 = winnerName; dbData.bracket[5].p1_img = winnerImg; }
+        if(matchIndex === 3) { dbData.bracket[5].p2 = winnerName; dbData.bracket[5].p2_img = winnerImg; }
+        
+        // Semi-Final Winners go to Final, Losers go to 3rd place
+        if(matchIndex === 4) {
+            dbData.bracket[6].p1 = winnerName; dbData.bracket[6].p1_img = winnerImg;
+            if(dbData.bracket[7]) { dbData.bracket[7].p1 = loserName; dbData.bracket[7].p1_img = loserImg; }
+        }
+        if(matchIndex === 5) {
+            dbData.bracket[6].p2 = winnerName; dbData.bracket[6].p2_img = winnerImg;
+            if(dbData.bracket[7]) { dbData.bracket[7].p2 = loserName; dbData.bracket[7].p2_img = loserImg; }
+        }
+
+        m.played = true;
+        saveToCloud();
+        renderBracketAdmin();
+        showToast(`${winnerName} Advanced!`);
+    }
+
+    function renderBracketAdmin() {
+        const ui = document.getElementById('bracket-admin-list');
+        if(!dbData.bracket || dbData.bracket.length === 0) {
+            ui.innerHTML = `<p style="color:#888;">No playoff bracket created yet. Click "Auto-Seed Top 8 Playoffs" above.</p>`;
+            return;
+        }
+
+        ui.innerHTML = dbData.bracket.map((m, i) => `
+            <div class="card" style="border:1px solid var(--gold);">
+                <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                    <span style="color:var(--gold); font-weight:bold; font-size:0.9rem;">${m.label || ('MATCH ' + (i+1))}</span>
+                    <label><input type="checkbox" ${m.played ? 'checked' : ''} onchange="dbData.bracket[${i}].played=this.checked;"> Completed</label>
+                </div>
+                
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <input type="text" value="${m.p1}" onchange="dbData.bracket[${i}].p1=this.value" style="flex:2;">
+                    <input type="number" value="${m.s1}" onchange="dbData.bracket[${i}].s1=parseInt(this.value)" style="width:55px; text-align:center;">
+                    <button class="btn btn-gold" style="padding:6px 12px; font-size:0.9rem;" onclick="advanceWinner(${i}, 'p1')" title="Advance as Winner">W</button>
+                </div>
+
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                    <input type="text" value="${m.p2}" onchange="dbData.bracket[${i}].p2=this.value" style="flex:2;">
+                    <input type="number" value="${m.s2}" onchange="dbData.bracket[${i}].s2=parseInt(this.value)" style="width:55px; text-align:center;">
+                    <button class="btn btn-gold" style="padding:6px 12px; font-size:0.9rem;" onclick="advanceWinner(${i}, 'p2')" title="Advance as Winner">W</button>
+                </div>
+
+                <input type="text" value="${m.date || ''}" onchange="dbData.bracket[${i}].date=this.value" placeholder="Playoff Date/Time" style="font-size:0.85rem;">
+            </div>
+        `).join('');
+    }
+
+    // 9. NAVIGATION
+    function go(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        const el = document.getElementById(pageId);
+        if(el) el.classList.add('active');
+        const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(pageId));
+        if(btn) btn.classList.add('active');
+    }
+
+    // Default start date = today
+    document.getElementById('start-date').valueAsDate = new Date();
+</script>
+</body>
+</html>

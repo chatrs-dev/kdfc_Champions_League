@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDFC Champions League 2026</title>
+    
+    <!-- FONTS & ICONS -->
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;600;700&family=Rajdhani:wght@500;600;700;800&family=Oswald:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- FIREBASE COMPAT -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
+
+    <style>
+        :root {
+            --gold: #FFD700;
+            --blue: #00F0FF;
+            --win: #00E676;
+            --dark: #07070a;
+            --card-bg: rgba(16, 17, 24, 0.88);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--dark);
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .bg-fixed {
+            position: fixed; inset: 0;
+            background: radial-gradient(circle at 50% 10%, #151828 0%, #06070a 80%);
+            z-index: -2;
+        }
+        .overlay {
+            position: fixed; inset: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+        }
+
+        /* NAVIGATION */
+        nav {
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 1000;
+            background: rgba(7, 7, 10, 0.94); backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            display: flex; justify-content: center; gap: 10px; padding: 12px 15px;
+            overflow-x: auto; white-space: nowrap; scrollbar-width: none;
+        }
+        nav::-webkit-scrollbar { display: none; }
+
+        .nav-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid var(--border); 
+            color: #ccc; padding: 8px 24px; border-radius: 50px;
+            font-family: 'Teko', sans-serif; font-size: 1.2rem; cursor: pointer;
+            transition: 0.3s; text-transform: uppercase; text-decoration: none;
+        }
+        .nav-btn:hover { color: #fff; border-color: var(--blue); }
+        .nav-btn.active { 
+            background: linear-gradient(135deg, var(--gold), #ffaa00);
+            color: black; border-color: var(--gold); 
+            font-weight: bold; box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        .page-section { display: none; padding: 90px 15px 40px; max-width: 1250px; margin: 0 auto; animation: fadeIn 0.4s ease; }
+        .page-section.active-page { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* HERO / HOME */
+        .hero {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: calc(100vh - 120px); text-align: center;
+        }
+        .hero-box {
+            background: var(--card-bg); border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 24px; padding: 40px 25px; max-width: 520px; width: 100%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0, 240, 255, 0.15);
+            position: relative; overflow: hidden;
+        }
+        .hero-badge {
+            font-size: 4rem; margin-bottom: 10px; display: inline-block;
+            filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.5));
+        }
+        h1.league-title {
+            font-family: 'Teko'; font-size: 3.4rem; line-height: 1; margin: 0;
+            letter-spacing: 2px; text-transform: uppercase;
+        }
+        h1.league-title span { color: var(--gold); text-shadow: 0 0 15px rgba(255, 215, 0, 0.4); }
+        .sub-tag { color: var(--blue); font-weight: 700; letter-spacing: 2px; margin: 8px 0 25px; text-transform: uppercase; font-size: 0.95rem; }
+
+        .rules-card {
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+            border-radius: 16px; padding: 18px; margin-bottom: 25px; font-size: 0.95rem;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 15px; text-align: left;
+        }
+        .rules-item small { color: #888; text-transform: uppercase; font-size: 0.75rem; display: block; }
+        .rules-item strong { color: #fff; font-size: 1.1rem; }
+
+        .prize-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 18px; border-radius: 12px; margin-bottom: 10px;
+            background: rgba(255, 215, 0, 0.08); border: 1px solid rgba(255, 215, 0, 0.2);
+            font-weight: 700;
+        }
+
+        /* TITLES */
+        h2.sec-title {
+            text-align: center; font-family: 'Teko'; font-size: 3.5rem; margin: 0 0 20px;
+            color: #fff; text-shadow: 0 0 15px var(--blue); letter-spacing: 2px;
+        }
+
+        /* TABLE */
+        .table-card {
+            background: var(--card-bg); border: 1px solid var(--border);
+            border-radius: 18px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+        }
+        .qual-legend {
+            padding: 12px 20px; background: rgba(0,0,0,0.5); display: flex; align-items: center; gap: 15px;
+            font-size: 0.85rem; border-bottom: 1px solid var(--border); flex-wrap: wrap;
+        }
+        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+        .dot.qf { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+
+        .table-wrap { overflow-x: auto; width: 100%; }
+        table { width: 100%; border-collapse: collapse; min-width: 720px; }
+        th {
+            background: #0c0d12; color: #888; font-size: 0.8rem; padding: 14px 10px;
+            text-transform: uppercase; letter-spacing: 1px; text-align: center; border-bottom: 1px solid var(--border);
+        }
+        td { padding: 12px 10px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; font-size: 0.95rem; }
+        
+        tr.qf-row { background: rgba(255, 215, 0, 0.035); }
+        tr.qf-row td:first-child { border-left: 4px solid var(--gold); }
+
+        .rank-badge {
+            font-family: 'Teko'; font-size: 1.3rem; font-weight: 700; color: #666;
+            width: 32px; display: inline-block;
+        }
+        .qf-row .rank-badge { color: var(--gold); }
+
+        .p-info { display: flex; align-items: center; gap: 12px; text-align: left; }
+        .p-img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid #333; background: #111; flex-shrink: 0; }
+        .qf-row .p-img { border-color: var(--gold); }
+        .p-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+        .qf-tag { font-size: 0.65rem; background: rgba(255, 215, 0, 0.15); color: var(--gold); padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-weight: 800; border: 1px solid rgba(255,215,0,0.3); }
+
+        .pts-col { font-weight: 800; font-size: 1.2rem; color: var(--blue); }
+        .gd-col { color: #aaa; }
+
+        /* MATCHES VIEW */
+        .filter-bar {
+            display: flex; gap: 15px; flex-wrap: wrap; justify-content: space-between; align-items: center;
+            margin-bottom: 25px; background: var(--card-bg); padding: 15px 20px; border-radius: 12px; border: 1px solid var(--border);
+        }
+        .filter-group { display: flex; gap: 10px; align-items: center; }
+        .filter-input {
+            background: #08080c; border: 1px solid #333; color: white; padding: 10px 15px;
+            border-radius: 8px; font-family: 'Rajdhani'; font-size: 0.95rem; min-width: 220px;
+        }
+        .filter-input:focus { border-color: var(--blue); outline: none; }
+
+        .matches-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 15px; }
+        .m-card {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
+            padding: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            border-left: 4px solid #333; transition: transform 0.2s;
+        }
+        .m-card.done { border-left-color: var(--win); }
+        .m-card.scheduled { border-left-color: var(--blue); }
+
+        .m-meta {
+            display: flex; justify-content: space-between; font-size: 0.75rem; color: #888;
+            margin-bottom: 12px; text-transform: uppercase; font-weight: 700;
+        }
+        .m-matchup { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        .m-side { display: flex; flex-direction: column; align-items: center; width: 38%; text-align: center; }
+        .m-side img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #333; margin-bottom: 6px; }
+        .m-side span { font-weight: 700; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        
+        .m-score-box { text-align: center; width: 24%; }
+        .m-score-val { font-family: 'Teko'; font-size: 2.2rem; color: var(--gold); line-height: 1; }
+        .vs-pill { font-family: 'Teko'; font-size: 1.3rem; color: #666; background: rgba(255,255,255,0.05); padding: 2px 10px; border-radius: 6px; }
+
+        /* BRACKET */
+        .bracket-scroll {
+            display: flex; gap: 30px; overflow-x: auto; padding: 20px 5px;
+            scrollbar-width: thin; scrollbar-color: var(--gold) transparent;
+        }
+        .round-col { min-width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 20px; }
+        .round-header {
+            text-align: center; font-family: 'Teko'; font-size: 2rem; color: var(--gold);
+            background: rgba(0,0,0,0.6); padding: 8px; border-radius: 8px; border-bottom: 2px solid var(--gold);
+            text-transform: uppercase;
+        }
+        .b-match {
+            background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        .b-team { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+        .b-team.winner span.b-name { color: #fff; text-shadow: 0 0 10px var(--win); }
+        .b-team.winner .b-score { color: var(--win); }
+        .b-team.winner img { border-color: var(--win); }
+        .b-name { font-weight: 700; font-size: 1rem; }
+        .b-score { font-family: 'Teko'; font-size: 1.8rem; color: var(--gold); }
+        .b-div { height: 1px; background: rgba(255,255,255,0.08); margin: 6px 0; }
+
+        #loader { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; }
+
+        @media (max-width: 768px) {
+            h1.league-title { font-size: 2.5rem; }
+            h2.sec-title { font-size: 2.8rem; }
+            .hero-box { padding: 30px 15px; }
+            .p-name { max-width: 110px; font-size: 0.85rem; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+            .filter-input { min-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loader"><h1 style="color:var(--gold); font-family:'Teko'; font-size:3rem;">LOADING LEAGUE DATA...</h1></div>
+<div class="bg-fixed"></div><div class="overlay"></div>
+
+<nav>
+    <button class="nav-btn active" onclick="showPage('home')"><i class="fa-solid fa-house"></i> Home</button>
+    <button class="nav-btn" onclick="showPage('table')"><i class="fa-solid fa-table-list"></i> Standings (<span id="nav-p-count">26</span>)</button>
+    <button class="nav-btn" onclick="showPage('matches')"><i class="fa-solid fa-futbol"></i> Matches</button>
+    <button class="nav-btn" onclick="showPage('playoffs')"><i class="fa-solid fa-trophy"></i> Top 8 Playoffs</button>
+</nav>
+
+<!-- 1. HOME SECTION -->
+<div id="home" class="page-section active-page">
+    <div class="hero">
+        <div class="hero-box">
+            <div class="hero-badge">👑</div>
+            <h1 class="league-title">KDFC <span>CHAMPIONS LEAGUE</span></h1>
+            <div class="sub-tag"><span id="hero-contenders">26</span> Contenders • 1 Ultimate Champion</div>
+
+            <div class="rules-card">
+                <div class="rules-item">
+                    <small>Tournament Format</small>
+                    <strong><span id="hero-p-count">26</span> Player League</strong>
+                </div>
+                <div class="rules-item">
+                    <small>Knockout Cutoff</small>
+                    <strong style="color:var(--gold);">Top 8 to Quarter-Finals</strong>
+                </div>
+                <div class="rules-item">
+                    <small>Daily Schedule</small>
+                    <strong>5 Matches Per Day</strong>
+                </div>
+                <div class="rules-item">
+                    <small>Total Clashes</small>
+                    <strong><span id="hero-match-count">325</span> League Matches</strong>
+                </div>
+            </div>
+
+            <div>
+                <div class="prize-row">
+                    <span style="color:var(--gold);">🥇 1st Place Champion</span>
+                    <span>1200 ৳</span>
+                </div>
+                <div class="prize-row" style="background:rgba(0, 240, 255, 0.08); border-color:rgba(0, 240, 255, 0.2);">
+                    <span style="color:var(--blue);">🥈 2nd Place Runner-Up</span>
+                    <span>800 ৳</span>
+                </div>
+                <div class="prize-row" style="background:rgba(205, 127, 50, 0.08); border-color:rgba(205, 127, 50, 0.2);">
+                    <span style="color:#cd7f32;">🥉 3rd Place Playoff</span>
+                    <span>300 ৳</span>
+                </div>
+                <div class="prize-row" style="background:rgba(205, 127, 50, 0.08); border-color:rgba(205, 127, 50, 0.2);">
+                    <span style="color:#cd7f32;"> 🏅 4th Place Playoff</span>
+                    <span>200 ৳</span>
+                </div>
+            </div>
+
+            <button onclick="showPage('table')" class="nav-btn active" style="margin-top:20px; width:100%; padding:14px; font-size:1.4rem;">
+                VIEW FULL STANDINGS
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- 2. LEAGUE STANDINGS TABLE -->
+<div id="table" class="page-section">
+    <h2 class="sec-title">LEAGUE STANDINGS</h2>
+    <div class="table-card">
+        <div class="qual-legend">
+            <span><i class="dot qf"></i> Top 8: Qualify for Quarter-Finals</span>
+            <span style="color:#888;">•</span>
+            <span style="color:#888;">Total: <strong id="legend-count" style="color:white;">26</strong> Players (Round Robin)</span>
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width:50px;">#</th>
+                        <th style="text-align:left; padding-left:15px;">Player</th>
+                        <th>P</th>
+                        <th>W</th>
+                        <th>D</th>
+                        <th>L</th>
+                        <th>GF</th>
+                        <th>GA</th>
+                        <th>GD</th>
+                        <th>PTS</th>
+                    </tr>
+                </thead>
+                <tbody id="ui-standings">
+                    <tr><td colspan="10" style="padding:30px;">Loading standings...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- 3. MATCHES SCHEDULE -->
+<div id="matches" class="page-section">
+    <h2 class="sec-title">FIXTURES & RESULTS</h2>
+    
+    <div class="filter-bar">
+        <div class="filter-group">
+            <label style="color:#aaa; font-weight:600;"><i class="fa-solid fa-calendar-day"></i> Filter Day:</label>
+            <select id="day-filter" class="filter-input" onchange="filterMatches()">
+                <option value="ALL">All Match Days</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <input type="text" id="player-search" class="filter-input" placeholder="Search player name..." oninput="filterMatches()">
+        </div>
+    </div>
+
+    <div id="ui-matches" class="matches-grid">
+        <center style="grid-column:1/-1; padding:40px; color:#888;">No matches found.</center>
+    </div>
+</div>
+
+<!-- 4. PLAYOFFS / TOP 8 BRACKET -->
+<div id="playoffs" class="page-section">
+    <h2 class="sec-title">TOP 8 PLAYOFFS</h2>
+    <div id="ui-bracket" class="bracket-scroll">
+        <center style="width:100%; color:#888; padding:50px;">Playoff bracket will begin after the league matches conclude.</center>
+    </div>
+</div>
+
+<script>
+    const firebaseConfig = {
+  apiKey: "AIzaSyBbPfnnayATrVH5O76I3GpPtE6iUln2B4Q",
+  authDomain: "kfpt-1.firebaseapp.com",
+  databaseURL: "https://kfpt-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "kfpt-1",
+  storageBucket: "kfpt-1.firebasestorage.app",
+  messagingSenderId: "73599282366",
+  appId: "1:73599282366:web:4c2ae368144a52f40d42ef",
+  measurementId: "G-G87CNPQ1MG"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const DEF_AVATAR = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+
+    let state = {
+        players: [],
+        matches: [],
+        bracket: []
+    };
+
+    function showPage(id) {
+        document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active-page'));
+        document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+        const target = document.getElementById(id);
+        if(target) target.classList.add('active-page');
+        const activeNav = Array.from(document.querySelectorAll('nav .nav-btn')).find(b => b.getAttribute('onclick').includes(id));
+        if(activeNav) activeNav.classList.add('active');
+        window.scrollTo(0,0);
+    }
+
+    db.ref().on('value', snap => {
+        document.getElementById('loader').style.display = 'none';
+        const d = snap.val();
+        if(!d) return;
+
+        state.players = d.players || [];
+        state.matches = d.matches || [];
+        state.bracket = d.bracket || [];
+
+        updateMetaCounters();
+        renderStandings();
+        populateDayFilter();
+        filterMatches();
+        renderBracket();
+    });
+
+    function updateMetaCounters() {
+        const pCount = state.players.length || 0;
+        const totalMatches = state.matches.length || (pCount * (pCount - 1) / 2);
+
+        document.getElementById('nav-p-count').innerText = pCount;
+        document.getElementById('hero-contenders').innerText = pCount;
+        document.getElementById('hero-p-count').innerText = pCount;
+        document.getElementById('legend-count').innerText = pCount;
+        document.getElementById('hero-match-count').innerText = totalMatches;
+    }
+
+    function getPlayerImg(name) {
+        const found = state.players.find(p => p.name === name);
+        return (found && found.photo) ? found.photo : DEF_AVATAR;
+    }
+
+    function renderStandings() {
+        const tbody = document.getElementById('ui-standings');
+        if(!state.players || state.players.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="10" style="padding:30px; color:#888;">No players found in league.</td></tr>`;
+            return;
+        }
+
+        const sorted = [...state.players].sort((a,b) => {
+            return (b.pts || 0) - (a.pts || 0) || 
+                   (b.gd || 0) - (a.gd || 0) || 
+                   (b.gf || 0) - (a.gf || 0) || 
+                   (a.name.localeCompare(b.name));
+        });
+
+        tbody.innerHTML = sorted.map((p, idx) => {
+            const rank = idx + 1;
+            const isQF = rank <= 8;
+            return `
+            <tr class="${isQF ? 'qf-row' : ''}">
+                <td><span class="rank-badge">${rank}</span></td>
+                <td>
+                    <div class="p-info">
+                        <img src="${p.photo || DEF_AVATAR}" class="p-img" alt="${p.name}">
+                        <span class="p-name" title="${p.name}">${p.name}</span>
+                        ${isQF ? '<span class="qf-tag">TOP 8</span>' : ''}
+                    </div>
+                </td>
+                <td>${p.p || 0}</td>
+                <td>${p.w || 0}</td>
+                <td>${p.d || 0}</td>
+                <td>${p.l || 0}</td>
+                <td>${p.gf || 0}</td>
+                <td>${p.ga || 0}</td>
+                <td class="gd-col">${(p.gd > 0 ? '+' : '') + (p.gd || 0)}</td>
+                <td class="pts-col">${p.pts || 0}</td>
+            </tr>`;
+        }).join('');
+    }
+
+    function populateDayFilter() {
+        const select = document.getElementById('day-filter');
+        const currentVal = select.value;
+        const days = new Set();
+        state.matches.forEach(m => {
+            if(m.day) days.add(m.day);
+        });
+
+        const sortedDays = Array.from(days).sort((a,b) => a - b);
+        let opts = `<option value="ALL">All Match Days (${state.matches.length} Matches)</option>`;
+        sortedDays.forEach(d => {
+            opts += `<option value="${d}">Day ${d}</option>`;
+        });
+        select.innerHTML = opts;
+        select.value = currentVal || "ALL";
+    }
+
+    function filterMatches() {
+        const dayVal = document.getElementById('day-filter').value;
+        const searchVal = document.getElementById('player-search').value.toLowerCase().trim();
+        const container = document.getElementById('ui-matches');
+
+        let filtered = state.matches;
+        if(dayVal !== 'ALL') {
+            filtered = filtered.filter(m => String(m.day) === String(dayVal));
+        }
+        if(searchVal) {
+            filtered = filtered.filter(m => 
+                (m.p1 && m.p1.toLowerCase().includes(searchVal)) || 
+                (m.p2 && m.p2.toLowerCase().includes(searchVal))
+            );
+        }
+
+        if(filtered.length === 0) {
+            container.innerHTML = `<center style="grid-column:1/-1; padding:40px; color:#888;">No matches match your filter criteria.</center>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(m => `
+            <div class="m-card ${m.played ? 'done' : 'scheduled'}">
+                <div class="m-meta">
+                    <span><i class="fa-regular fa-calendar"></i> Day ${m.day || 1} • Match #${m.id + 1}</span>
+                    <span style="color:${m.played ? 'var(--win)' : 'var(--blue)'};">${m.date || 'TBD'}</span>
+                </div>
+                <div class="m-matchup">
+                    <div class="m-side">
+                        <img src="${getPlayerImg(m.p1)}" alt="${m.p1}">
+                        <span title="${m.p1}">${m.p1}</span>
+                    </div>
+                    <div class="m-score-box">
+                        ${m.played 
+                            ? `<span class="m-score-val">${m.s1} - ${m.s2}</span>` 
+                            : `<span class="vs-pill">VS</span>`
+                        }
+                    </div>
+                    <div class="m-side">
+                        <img src="${getPlayerImg(m.p2)}" alt="${m.p2}">
+                        <span title="${m.p2}">${m.p2}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function renderBracket() {
+        const ui = document.getElementById('ui-bracket');
+        const b = state.bracket;
+        if(!b || b.length < 7) {
+            ui.innerHTML = `<center style="width:100%; color:#888; padding:50px;">Playoff bracket will be created once Top 8 are finalized.</center>`;
+            return;
+        }
+
+        function createMatch(m, title = "") {
+            const w1 = (m.played && m.s1 > m.s2) ? 'winner' : '';
+            const w2 = (m.played && m.s2 > m.s1) ? 'winner' : '';
+            return `
+            <div class="b-match">
+                ${title ? `<div style="font-size:0.75rem; color:var(--blue); text-transform:uppercase; margin-bottom:6px; font-weight:700;">${title}</div>` : ''}
+                <div class="b-team ${w1}">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${m.p1_img || getPlayerImg(m.p1)}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid #444;">
+                        <span class="b-name">${m.p1 || 'TBD'}</span>
+                    </div>
+                    <span class="b-score">${m.played ? m.s1 : '-'}</span>
+                </div>
+                <div class="b-div"></div>
+                <div class="b-team ${w2}">
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <img src="${m.p2_img || getPlayerImg(m.p2)}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; border:1px solid #444;">
+                        <span class="b-name">${m.p2 || 'TBD'}</span>
+                    </div>
+                    <span class="b-score">${m.played ? m.s2 : '-'}</span>
+                </div>
+                <div style="font-size:0.7rem; color:#666; text-align:right; margin-top:4px;">${m.date || ''}</div>
+            </div>`;
+        }
+
+        // Layout: 4 QF, 2 SF, 1 Final, 1 Third Place
+        let html = `
+        <div class="round-col">
+            <div class="round-header">Quarter-Finals</div>
+            ${createMatch(b[0], "QF 1 (Seed 1 vs 8)")}
+            ${createMatch(b[1], "QF 2 (Seed 4 vs 5)")}
+            ${createMatch(b[2], "QF 3 (Seed 2 vs 7)")}
+            ${createMatch(b[3], "QF 4 (Seed 3 vs 6)")}
+        </div>
+        <div class="round-col">
+            <div class="round-header">Semi-Finals</div>
+            ${createMatch(b[4], "Semi Final 1")}
+            ${createMatch(b[5], "Semi Final 2")}
+        </div>
+        <div class="round-col">
+            <div class="round-header">Grand Finals</div>
+            ${createMatch(b[6], "🏆 Championship Final")}
+            ${b[7] ? createMatch(b[7], "🥉 3rd Place Match") : ''}
+        </div>`;
+
+        ui.innerHTML = html;
+    }
+</script>
+</body>
+</html>
