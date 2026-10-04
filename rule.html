@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KDFC CHAMPIONSHIP — S3 (2026) | Official Rules</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;600&family=Hind+Siliguri:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-gold: #ffcc00;
+            --secondary-gold: #d4af37;
+            --dark-bg: #0f172a;
+            --card-bg: #1e293b;
+            --text-light: #f8fafc;
+            --accent-blue: #38bdf8;
+            --red-card: #ef4444;
+            --orange-card: #f97316;
+            --yellow-card: #eab308;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--dark-bg);
+            color: var(--text-light);
+            font-family: 'Poppins', 'Hind Siliguri', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Hero Section */
+        header {
+            background: linear-gradient(rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.8)), 
+                        url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            height: 60vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-bottom: 4px solid var(--primary-gold);
+        }
+
+        .logo-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3.5rem;
+            color: var(--primary-gold);
+            text-shadow: 0 0 20px rgba(255, 204, 0, 0.5);
+            margin-bottom: 10px;
+        }
+
+        .sub-title {
+            font-size: 1.5rem;
+            letter-spacing: 5px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1000px;
+            margin: -50px auto 50px;
+            padding: 0 20px;
+        }
+
+        /* Rule Sections */
+        .section-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-left: 5px solid var(--primary-gold);
+            transition: transform 0.3s ease;
+        }
+
+        .section-card:hover {
+            transform: translateY(-5px);
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: var(--primary-gold);
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 1.8rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        /* Match Settings List */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .setting-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .setting-label {
+            color: var(--accent-blue);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            display: block;
+        }
+
+        .setting-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Bengali Text Styling */
+        .bn-text {
+            font-family: 'Hind Siliguri', sans-serif;
+            color: #cbd5e1;
+        }
+
+        .note-box {
+            background: rgba(234, 179, 8, 0.1);
+            border: 1px solid var(--yellow-card);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-style: italic;
+        }
+
+        /* List Items */
+        ul {
+            list-style: none;
+        }
+
+        ul li {
+            margin-bottom: 12px;
+            position: relative;
+            padding-left: 30px;
+        }
+
+        ul li::before {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary-gold);
+        }
+
+        /* Card Rules Styling */
+        .card-badge {
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            display: inline-block;
+            margin-right: 10px;
+            color: #000;
+        }
+
+        .bg-orange { background-color: var(--orange-card); }
+        .bg-yellow { background-color: var(--yellow-card); }
+        .bg-red { background-color: var(--red-card); color: #fff; }
+
+        footer {
+            text-align: center;
+            padding: 50px 20px;
+            background: #020617;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .committee-note {
+            max-width: 700px;
+            margin: 0 auto;
+            border: 2px dashed var(--primary-gold);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-card {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        @media (max-width: 768px) {
+            .logo-text { font-size: 2rem; }
+            .sub-title { font-size: 1rem; }
+            .container { margin-top: -20px; }
+            .section-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="sub-title">Official Tournament Rules</div>
+        <h1 class="logo-text">KDFC CHAMPIONS LEAGUE </h1>
+        <div class="sub-title">2026</div>
+    </header>
+
+    <div class="container">
+        
+        <!-- 1. Match Room Settings -->
+        <section class="section-card">
+            <h2><i class="fas fa-gamepad"></i> 1. Match Room Settings</h2>
+            <div class="settings-grid">
+                <div class="setting-item">
+                    <span class="setting-label">Match Type</span>
+                    <span class="setting-value">Standard</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Match Time</span>
+                    <span class="setting-value">8 Minutes</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Injuries</span>
+                    <span class="setting-value">ON</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Substitutes</span>
+                    <span class="setting-value">5 (3 Intervals)</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Group Stage</span>
+                    <span class="setting-value">ET & PK OFF</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Knockout Stage</span>
+                    <span class="setting-value">ET & PK ON</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Home Condition</span>
+                    <span class="setting-value" style="color: #4ade80;">Normal</span>
+                </div>
+                <div class="setting-item">
+                    <span class="setting-label">Away Condition</span>
+                    <span class="setting-value" style="color: #4ade80;">Normal</span>
+                </div>
+            </div>
+            <div class="note-box bn-text">
+                <strong>Note:</strong> ম্যাচ চলাকালীন বা ম্যাচ শেষে রুম সেটিংস সংক্রান্ত কোনো অভিযোগ গ্রহণযোগ্য হবে না। তবে ইচ্ছাকৃতভাবে নিজের টিমের ফর্ম ভালো এবং প্রতিপক্ষের ফর্ম খারাপ সেট করলে, প্রমাণ সাপেক্ষে সংশ্লিষ্ট খেলোয়াড় Auto Loss পাবে।
+            </div>
+        </section>
+
+        <!-- 2. Lag & Disconnection -->
+        <section class="section-card">
+            <h2><i class="fas fa-wifi"></i> 2. Lag & Disconnection</h2>
+            <ul class="bn-text">
+                <li>ল্যাগ বা স্লো অনুভব করলে অবশ্যই Screen Recorder চালু রেখে ভিডিও প্রমাণ সংগ্রহ করতে হবে এবং এরপর ম্যাচ Pause করে Disconnect করতে হবে।</li>
+                <li>ভিডিও প্রমাণ ছাড়া অন্য কোনো কারণে ম্যাচ Disconnect করলে ম্যাচ অফিসিয়াল প্রয়োজন অনুযায়ী Yellow Card দিতে পারবেন।</li>
+                <li>Disconnect হওয়ার পর Rematch Room কে তৈরি করবে তা Win দেখানো প্লেয়ারের সিদ্ধান্ত অনুযায়ী হবে।</li>
+                <li>ইচ্ছাকৃত Back Pass করে সময় নষ্ট করা সম্পূর্ণ নিষিদ্ধ। অভিযোগ প্রমাণিত হলে শাস্তিমূলক অতিরিক্ত সময় যোগ করে Rematch হবে এবং প্রয়োজন অনুযায়ী Yellow Card দেওয়া হবে।</li>
+                <li>কোনো খেলোয়াড় ম্যাচ শেষ করতে অস্বীকৃতি জানালে বা অসম্পন্ন রাখলে, বাকি সময় Ratio অনুযায়ী স্কোর নির্ধারণ করা হবে (সর্বোচ্চ ১০ গোল পর্যন্ত)।</li>
+            </ul>
+        </section>
+
+        <!-- 3. Room & Auto Result -->
+        <section class="section-card">
+            <h2><i class="fas fa-calendar-check"></i> 3. Room Creation & Results</h2>
+            <ul class="bn-text">
+                <li>উভয় খেলোয়াড় চাইলে Matchday Deadline-এর পরেও পারস্পরিক সম্মতিতে ম্যাচ সম্পন্ন করতে পারবেন।</li>
+                <li>নির্ধারিত Response Time(10:00 PM - 10:30PM) -এর মধ্যে উভয় খেলোয়াড়কে Matchday Group-এ Response দিতে হবে।</li>
+                <li>Response বলতে Opponent-কে Mention করা, Opponent-এর মেসেজের উত্তর দেওয়া অথবা Opponent অনুপস্থিত থাকলে Referee-কে Mention করে জানানো।</li>
+                <li>"Amar Oppo Ke?", "Oppo Vai Achen?" ইত্যাদি সাধারণ মেসেজ Activity হিসেবে গণ্য হবে না।</li>
+                <li>উভয় খেলোয়াড় Response না দিলে ম্যাচ Auto Draw হবে।</li>
+                <li>একপক্ষ Response না দিলে অনুপস্থিত পক্ষ Auto Loss পাবে।</li>
+            </ul>
+        </section>
+
+        <!-- 4. Video & Recording -->
+        <section class="section-card">
+            <h2><i class="fas fa-video"></i> 4. Recording Requirements</h2>
+            <p class="bn-text" style="margin-bottom: 15px;">নিচের ক্ষেত্রে Screen Recording বাধ্যতামূলক—</p>
+            <ul class="bn-text">
+                <li>ম্যাচ অসম্পন্ন অবস্থায় এগিয়ে থেকে Disconnect/Network Loss হলে।</li>
+                <li>পূর্ণ ম্যাচ জিতলে বা Draw হলে।</li>
+                <li><strong>Submission:</strong> ম্যাচ শেষ হওয়ার ১০ মিনিটের মধ্যে Uncut ভিডিও বা স্ক্রিনশট জমা দিতে হবে।</li>
+            </ul>
+            <div class="note-box" style="border-color: var(--accent-blue); background: rgba(56, 189, 248, 0.1);">
+                <p><strong>Must include in video:</strong></p>
+                <p>Room ID, Match Result, In-Match Screen, Konami User ID, Smart Assist OFF, Phone Model (Settings).</p>
+            </div>
+        </section>
+        <section class="section-card">
+            <h2><i class="fas fa-video"></i> 5.Dabble Defence Rule</h2>
+            <p class="bn-text" style="margin-bottom: 15px;">Dabble Defence ব্যবহারের বিরুদ্ধে উপযুক্ত ভিডিও/প্রমাণ জমা পড়লে, ম্যাচের ফলাফল বাতিল হবে এবং রিম্যাচ অনুষ্ঠিত হবে।</p>
+            <ul class="bn-text">
+                <li>যদি অভিযুক্ত খেলোয়াড় Dabble Defence ব্যবহার করে ম্যাচ জিতে থাকে:
+- বৈধ প্রমাণ পাওয়া গেলে ম্যাচটি ০–০ স্কোরলাইন থেকে পুনরায় শুরু (Rematch) হবে।</li>
+<li>যদি অভিযোগের পক্ষে কোনো বৈধ প্রমাণ না থাকে:
+
+- ম্যাচের মূল ফলাফলই চূড়ান্ত হিসেবে গণ্য হবে।</li>
+                <li><strong>উদাহরণ: </strong> -ম্যাচের ফল ১–১। player 1 Dabble Defence ব্যবহার করেছে এবং player 2  বৈধ প্রমাণ দিয়েছে।
+- সেক্ষেত্রে রিম্যাচ হবে, তবে player2  ১ গোলের লিড (১–০) নিয়ে ম্যাচ শুরু করবে।</li>
+            </ul>
+        </section>
+                <section class="section-card">
+            <h2><i class="fas fa-video"></i> 6.Qualification for the Knockout Stage</h2>
+            <p class="bn-text" style="margin-bottom: 15px;">নকআউট পর্বে কারা উঠবে?</p>
+            <ul class="bn-text">
+                <li>League এর  ১ম হতে ৮ম স্থান অর্জনকারী দল সরাসরি কোয়ালিফাই করবে।</li>
+<li>মোট যোগ্যতা অর্জন করবে: ৮ জন </li>
+                 <li>মোট নকআউট খেলয়ার = ৮ জন </li>
+            </ul>
+        </section>
+
+        <!-- 7. Cards -->
+        <section class="section-card">
+            <h2><i class="fas fa-exclamation-triangle"></i> 7. Behaviour & Card Rules</h2>
+            <div style="margin-bottom: 20px;">
+                <span class="card-badge bg-orange">Orange Card</span>
+                <p class="bn-text" style="display: inline;">অপ্রয়োজনীয় মেসেজ, Aggressive ভাষা, Spam বা অফিশিয়াল নির্দেশ অমান্য করলে।</p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <span class="card-badge bg-yellow">Yellow Card</span>
+                <p class="bn-text" style="display: inline;">প্রতিটি Yellow Card-এর জন্য মোট পয়েন্ট থেকে (-১) কাটা হবে। ২টিতে ১টি Red Card।</p>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <span class="card-badge bg-red">Red Card</span>
+                <p class="bn-text" style="display: inline;">ম্যাচ শেষ হওয়ার আগে Red Card পেলে সরাসরি Auto Loss।</p>
+            </div>
+            <p class="bn-text" style="margin-top: 15px; color: var(--red-card);">
+                * গালাগালি, ব্যক্তিগত আক্রমণ, বা কমিটিকে অসম্মান করা সরাসরি শাস্তিযোগ্য অপরাধ।
+            </p>
+        </section>
+
+    </div>
+
+    <footer>
+        <div class="committee-note bn-text">
+            <h3>Tournament Committee Decision</h3>
+            <p>টুর্নামেন্ট সংক্রান্ত যেকোনো বিরোধ, অভিযোগ বা বিশেষ পরিস্থিতিতে <strong>KURIGRAM DYNASTY FC</strong> Tournament Committee-এর সিদ্ধান্তই চূড়ান্ত এবং সকল খেলোয়াড় তা মেনে চলতে বাধ্য থাকবেন।</p>
+        </div>
+        <p style="margin-top: 30px; opacity: 0.5;">&copy; 2026 KDFC Championship. All Rights Reserved.</p>
+    </footer>
+
+</body>
+</html>
